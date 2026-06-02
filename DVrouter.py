@@ -14,6 +14,7 @@ class DVrouter(Router):
     data structures). See the `Router` base class for docstrings of the methods to
     override.
     """
+    INFINITY = 16
 
     def __init__(self, addr, heartbeat_time):
         Router.__init__(self, addr)  # Initialize base class - DO NOT REMOVE
@@ -32,6 +33,70 @@ class DVrouter(Router):
 
         # {neighbor_address: {destination: cost}}
         self.received_distance_vectors = {}
+
+
+    def _recompute_routes(self):
+        updated_distance_vector = {self.addr: 0}
+        updated_forwarding_table = {}
+
+        # Chứa tất cả các hàng xóm và đích đến mà chúng ta đã nhận được từ các hàng xóm
+        all_destinations = set()
+
+        for neighbor_distance_vector in self.received_distance_vectors.values():
+            all_destinations.update(neighbor_distance_vector.keys())
+
+        # Tính toán chi phí tốt nhất đến mỗi đích đến thông qua mỗi hàng xóm
+        for destination in all_destinations:
+
+            if destination == self.addr:
+                continue
+
+            best_cost = INFINITY
+            best_output_port = None
+
+            for port, (neighbor_address, link_cost) in self.neighbor_links.items():
+
+                if neighbor_address not in self.received_distance_vectors:
+                    continue
+
+                neighbor_distance_vector = (
+                    self.received_distance_vectors[neighbor_address]
+                )
+
+                neighbor_cost_to_destination = (
+                    neighbor_distance_vector.get(destination, INFINITY)
+                )
+
+                total_cost = link_cost + neighbor_cost_to_destination
+
+                if total_cost < best_cost:
+                    best_cost = total_cost
+                    best_output_port = port 
+
+            if best_cost < INFINITY:
+                updated_distance_vector[destination] = best_cost
+                updated_forwarding_table[destination] = best_output_port
+
+        #Xử lý các hàng xóm trực tiếp (nếu chi phí đến hàng xóm đó tốt hơn chi phí đã biết đến đích đến của hàng xóm đó)
+        for port, (neighbor_address, link_cost) in self.neighbor_links.items():
+
+            if (
+                neighbor_address not in updated_distance_vector
+                or link_cost < updated_distance_vector[neighbor_address]
+            ):
+                updated_distance_vector[neighbor_address] = link_cost
+                updated_forwarding_table[neighbor_address] = port
+
+        routing_changed = (
+            updated_distance_vector != self.distance_vector
+            or updated_forwarding_table != self.forwarding_table
+        )
+
+        self.distance_vector = updated_distance_vector
+        self.forwarding_table = updated_forwarding_table
+
+        return routing_changed
+    
 
     def handle_packet(self, port, packet):
         """Process incoming packet."""
