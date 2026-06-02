@@ -180,11 +180,16 @@ class DVrouter(Router):
 
     def handle_remove_link(self, port):
         """Handle removed link."""
-        # TODO
-        #   update the distance vector of this router
-        #   update the forwarding table
-        #   broadcast the distance vector of this router to neighbors
-        pass
+
+        if port not in self.neighbor_links:
+            return
+
+        neighbor_address, _ = self.neighbor_links.pop(port)
+
+        self.received_distance_vectors.pop(neighbor_address, None)
+
+        self._recompute_routes()
+        self._broadcast_distance_vector()
 
     def handle_time(self, time_ms):
         """Handle current time."""
