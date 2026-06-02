@@ -17,11 +17,21 @@ class DVrouter(Router):
 
     def __init__(self, addr, heartbeat_time):
         Router.__init__(self, addr)  # Initialize base class - DO NOT REMOVE
+
         self.heartbeat_time = heartbeat_time
-        self.last_time = 0
-        # TODO
-        #   add your own class fields and initialization code here
-        pass
+        self.last_broadcast_time = 0
+
+        # {destination_address: total_cost}
+        self.distance_vector = {self.addr: 0}
+
+        # {destination_address: output_port}
+        self.forwarding_table = {}
+
+        # {port: (neighbor_address, link_cost)}
+        self.neighbor_links = {}
+
+        # {neighbor_address: {destination: cost}}
+        self.received_distance_vectors = {}
 
     def handle_packet(self, port, packet):
         """Process incoming packet."""
