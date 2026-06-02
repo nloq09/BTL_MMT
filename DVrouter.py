@@ -169,11 +169,14 @@ class DVrouter(Router):
 
     def handle_new_link(self, port, endpoint, cost):
         """Handle new link."""
-        # TODO
-        #   update the distance vector of this router
-        #   update the forwarding table
-        #   broadcast the distance vector of this router to neighbors
-        pass
+
+        self.neighbor_links[port] = (endpoint, cost)
+
+        if endpoint not in self.received_distance_vectors:
+            self.received_distance_vectors[endpoint] = {}
+
+        self._recompute_routes()
+        self._broadcast_distance_vector()
 
     def handle_remove_link(self, port):
         """Handle removed link."""
