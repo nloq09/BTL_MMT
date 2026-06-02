@@ -5,7 +5,8 @@
 #####################################################
 
 from router import Router
-
+from packet import Packet
+import json
 
 class DVrouter(Router):
     """Distance vector routing protocol implementation.
@@ -97,6 +98,41 @@ class DVrouter(Router):
 
         return routing_changed
     
+    # Gửi distance vector đến hàng xóm (hoặc một hàng xóm cụ thể nếu target_port được chỉ định)
+    def _broadcast_distance_vector(self, target_port=None):
+            ports_to_send = (
+                [target_port]
+                if target_port is not None
+                else list(self.neighbor_links.keys())
+            )
+
+            for port in ports_to_send:
+
+                if port not in self.neighbor_links:
+                    continue
+
+                neighbor_address, _ = self.neighbor_links[port]
+
+                advertised_routes = {}
+
+                for destination, cost in self.distance_vector.items():
+                    if destination == self.addr:
+                        advertised_routes[destination] = cost
+                        continue
+
+                    if self.forwarding_table.get(destination) == port:
+                        continue
+
+                    advertised_routes[destination] = cost
+
+                routing_packet = Packet(
+                    kind=Packet.ROUTING,
+                    src_addr=self.addr,
+                    dst_addr=neighbor_address,
+                    content=json.dumps(advertised_routes)
+                )
+
+                self.send(port, routing_packet)
 
     def handle_packet(self, port, packet):
         """Process incoming packet."""
