@@ -8,6 +8,8 @@ from router import Router
 from packet import Packet
 import json
 
+INFINITY = 16
+
 class DVrouter(Router):
     """Distance vector routing protocol implementation.
 
@@ -15,8 +17,6 @@ class DVrouter(Router):
     data structures). See the `Router` base class for docstrings of the methods to
     override.
     """
-    INFINITY = 16
-
     def __init__(self, addr, heartbeat_time):
         Router.__init__(self, addr)  # Initialize base class - DO NOT REMOVE
 
@@ -201,7 +201,9 @@ class DVrouter(Router):
             self._broadcast_distance_vector()
 
     def __repr__(self):
-        """Representation for debugging in the network visualizer."""
-        # TODO
-        #   NOTE This method is for your own convenience and will not be graded
-        return f"DVrouter(addr={self.addr})"
+
+        return (
+            f"DVrouter(addr={self.addr}, "
+            f"distance_vector={self.distance_vector}, "
+            f"forwarding_table={self.forwarding_table})"
+        )
